@@ -1,6 +1,6 @@
 {
   "name": "bun-basics",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
     "bun-types": "latest",
@@ -13,6 +13,7 @@
   "dependencies": {
     "@elysiajs/html": "^0.7.3",
     "@libsql/client": "^0.3.6",
+    "better-sqlite3": "^9.0.0",
     "drizzle-orm": "^0.28.6",
     "elysia": "^0.7.18"
   }

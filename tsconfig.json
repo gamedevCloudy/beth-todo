@@ -15,12 +15,18 @@
     "jsx": "react",
     "jsxFactory": "Html.createElement",
     "jsxFragmentFactory": "Html.Fragment",
-    
+
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "types": [
       "bun-types" // add Bun global
-    ]
+    ],
+
+  },
+  "scripts": 
+  {
+    "db:push": "bunx drizzle-kit push:sqlite", 
+    "db:studio": "bunx drizzle-kit studio",
   }
 }

@@ -1,6 +1,9 @@
 import { Elysia, t } from "elysia";
 import { html } from "@elysiajs/html";
 import * as elements from "typed-html";
+import { db } from "./db";
+import { Todo, todos } from "./db/schema";
+import { eq } from "drizzle-orm"; 
 
 const app = new Elysia()
   .use(html())
@@ -16,15 +19,29 @@ const app = new Elysia()
       </BaseHtml>
     )
   )
-  .get("/todos", () => <TodoList todos={db} />)
+  .get("/todos", async () => {
+    const data = await db.select().from(todos).all();
+
+    return <TodoList todos={data} />;
+  })
   .post(
     "/todos/toggle/:id",
-    ({ params }) => {
-      const todo = db.find((todo) => todo.id === params.id);
-      if (todo) {
-        todo.completed = !todo.completed;
-        return <TodoItem {...todo} />;
-      }
+    async ({ params }) => {
+      const oldTodo = await db
+        .select()
+        .from(todos)
+        .where(eq(todos.id, params.id))
+        .get();
+
+      const newTodo = await db
+        .update(todos)
+        .set({ completed: !oldTodo?.completed })
+        .where(eq(todos.id, params.id))
+        .returning()
+        .get();
+      
+      return <TodoItem {...newTodo}/>
+      
     },
     {
       params: t.Object({
@@ -34,11 +51,8 @@ const app = new Elysia()
   )
   .delete(
     "/todos/:id",
-    ({ params: { id } }) => {
-      const todo = db.find((todo) => todo.id === id);
-      if (todo) {
-        db.splice(db.indexOf(todo), 1);
-      }
+    async ({ params: { id } }) => {
+      await db.delete(todos).where(eq(todos.id, id)).run(); 
     },
     {
       params: t.Object({
@@ -48,16 +62,12 @@ const app = new Elysia()
   )
   .post(
     "/todos",
-    ({ body }) => {
+    async ({ body }) => {
       if (body.content.length === 0) {
         throw new Error("Content Cannot Be Empty.");
       }
-      const newTodo = {
-        id: lastID++,
-        content: body.content,
-        completed: false,
-      };
-      db.push(newTodo);
+      const newTodo = await db.insert(todos).values(body).returning().get(); 
+
       return <TodoItem {...newTodo} />;
     },
     {
@@ -82,24 +92,13 @@ const BaseHtml = ({ children }: elements.Children) => `
 <title>the BETH stack</title>
 
 <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
 </head>
 ${children}
 </html>
 `;
-
-type Todo = {
-  id: number;
-  content: string;
-  completed: boolean;
-};
-
-const db: Todo[] = [
-  { id: 1, content: "learn beth stack", completed: true },
-  { id: 2, content: "build an app", completed: false },
-];
-let lastID = db.length - 1;
 
 function TodoItem({ id, content, completed }: Todo) {
   return (
@@ -138,10 +137,10 @@ function TodoList({ todos }: { todos: Todo[] }) {
 function TodoForm() {
   return (
     <form
-      class="flex flex-row space-x-3"
+      class="flex flex-row space-x-3 py-4"
       hx-post="/todos"
       hx-swap="beforebegin"
-     
+      _="on submit target.reset()"
     >
       <input name="content" type="text" class="border border-black" />
       <button type="submit">Add</button>
