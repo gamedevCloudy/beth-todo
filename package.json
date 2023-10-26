@@ -4,6 +4,7 @@
   "type": "module",
   "devDependencies": {
     "bun-types": "latest",
+    "drizzle-kit": "^0.19.13",
     "typed-html": "^3.0.1"
   },
   "peerDependencies": {
@@ -11,6 +12,8 @@
   },
   "dependencies": {
     "@elysiajs/html": "^0.7.3",
+    "@libsql/client": "^0.3.6",
+    "drizzle-orm": "^0.28.6",
     "elysia": "^0.7.18"
   }
 }
